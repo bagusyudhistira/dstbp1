@@ -83,7 +83,7 @@ if selected_mhh_col in final_input_df.columns:
     final_input_df.loc[0, selected_mhh_col] = True
 
 # Make prediction
-if st.sidebar.button('Prediksi Tagihan'):
+if st.sidebar.button('Prediksi Tingkat'):
     try:
         prediction = model.predict(final_input_df) # Use the new DataFrame name
         st.subheader('Hasil Tingkat Stres:')
