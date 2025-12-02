@@ -4,11 +4,11 @@ import joblib
 import numpy as np
 
 # Load the trained model
-# IMPORTANT: Pastikan 'dtr_model.pkl' ditempatkan dengan benar dan disimpan dengan joblib.
+# IMPORTANT: Pastikan model ditempatkan dengan benar dan disimpan dengan joblib.
 try:
-    model = joblib.load('dtr_model.pkl')
+    model = joblib.load('gbr_model.pkl')
 except FileNotFoundError:
-    st.error("Error: Model file 'dtr_model.pkl' not found. Please ensure it is in the same directory.")
+    st.error("Error: Model file 'gbr_model.pkl' not found. Please ensure it is in the same directory.")
     st.stop()
 except Exception as e:
     st.error(f"Error loading model: {e}")
