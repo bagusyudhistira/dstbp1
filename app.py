@@ -24,7 +24,7 @@ else:
         'living_conditions',
         'basic_needs',
         'academic_performance',
-        'study_load'
+        'study_load',
         'social_support',
         'peer_pressure',
         'extracurricular_activities',
@@ -63,7 +63,7 @@ def user_input_features():
         'basic_needs': basic_needs,
         'academic_performance': academic_performance,
         'study_load': study_load,
-        'social_support': social_support
+        'social_support': social_support,
         'peer_pressure': peer_pressure,
         'extracurricular_activities': extracurricular_activities,
         'bullying': bullying,
