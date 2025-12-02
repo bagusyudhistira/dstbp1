@@ -4,7 +4,7 @@ import joblib
 import numpy as np
 
 # Load the trained model
-# IMPORTANT: Pastikan 'linear_regression_model.pkl' ditempatkan dengan benar dan disimpan dengan joblib.
+# PENTING: Pastikan 'linear_regression_model.pkl' ditempatkan dengan benar dan disimpan dengan joblib.
 try:
     model = joblib.load('linear_regression_model.pkl')
 except FileNotFoundError:
@@ -14,38 +14,26 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     st.stop()
 
-# --- BLOK PENYESUAIAN NAMA KOLOM SECARA OTOMATIS DAN DEFINITIF ---
+# --- BLOK PENYESUAIAN NAMA KOLOM SECARA DEFINITIF ---
+# Berdasarkan error traceback yang berulang, model HANYA menerima format _0 dan _1.
+# Kami mengabaikan adaptasi otomatis dan langsung menerapkan solusi yang diminta model.
 
-# Definisi Fallback Column Names (dua kemungkinan yang paling sering terjadi)
-FALLBACK_COLUMNS_01 = [
-    'academic_performance', 'study_load', 'peer_pressure', 'extracurricular_activities', 'bullying',
-    'mental_health_history_0', 'mental_health_history_1'
-]
-FALLBACK_COLUMNS_ADA_TIDAKADA = [
-    'academic_performance', 'study_load', 'peer_pressure', 'extracurricular_activities', 'bullying',
-    'mental_health_history_Ada', 'mental_health_history_Tidak Ada'
+# Kolom yang DILIHAT oleh model saat training (DIPAKSA menggunakan _0 dan _1)
+MODEL_EXPECTED_COLUMNS = [
+    'academic_performance', 
+    'study_load', 
+    'peer_pressure', 
+    'extracurricular_activities', 
+    'bullying',
+    'mental_health_history_0',       # Kolom untuk 'Tidak Ada'
+    'mental_health_history_1'        # Kolom untuk 'Ada'
 ]
 
-if hasattr(model, 'feature_names_in_'):
-    # Mengambil daftar kolom yang digunakan saat training dari atribut model (cara paling aman)
-    MODEL_EXPECTED_COLUMNS = list(model.feature_names_in_)
-    
-    # Menentukan mapping yang sesuai berdasarkan nama kolom yang ditemukan
-    if any('_0' in col for col in MODEL_EXPECTED_COLUMNS):
-        # Jika model menggunakan format numerik (_0 dan _1)
-        DUMMY_COLUMN_MAPPING = {'Tidak Ada': 'mental_health_history_0', 'Ada': 'mental_health_history_1'}
-    elif any('_Ada' in col for col in MODEL_EXPECTED_COLUMNS):
-        # Jika model menggunakan format string (_Ada dan _Tidak Ada)
-        DUMMY_COLUMN_MAPPING = {'Tidak Ada': 'mental_health_history_Tidak Ada', 'Ada': 'mental_health_history_Ada'}
-    else:
-        # Jika tidak ditemukan pola yang jelas, gunakan default _0/_1
-        st.warning("Peringatan: Tidak dapat mengidentifikasi pola kolom dummy. Menggunakan asumsi mental_health_history_0/1.")
-        DUMMY_COLUMN_MAPPING = {'Tidak Ada': 'mental_health_history_0', 'Ada': 'mental_health_history_1'}
-        
-else:
-    # Fallback jika model tidak memiliki atribut feature_names_in_
-    MODEL_EXPECTED_COLUMNS = FALLBACK_COLUMNS_01
-    DUMMY_COLUMN_MAPPING = {'Tidak Ada': 'mental_health_history_0', 'Ada': 'mental_health_history_1'}
+# Mapping yang Sesuai dengan Kolom Model
+DUMMY_COLUMN_MAPPING = {
+    'Tidak Ada': 'mental_health_history_0',
+    'Ada': 'mental_health_history_1'
+}
 
 
 # Streamlit app title
@@ -99,7 +87,6 @@ dummy_col_name = DUMMY_COLUMN_MAPPING.get(mhh_value)
 # Set the relevant dummy variable to 1
 if dummy_col_name and dummy_col_name in final_input_df.columns:
     final_input_df[dummy_col_name] = 1
-# else block yang menampilkan error telah dihapus untuk menghindari false positive
 
 # --- DEBUGGING: Tampilkan kolom yang akan diprediksi ---
 st.markdown("---")
