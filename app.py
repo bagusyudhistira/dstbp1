@@ -14,16 +14,21 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     st.stop()
 
-# Define the exact features and order the model was trained on
-MODEL_EXPECTED_COLUMNS = [
-    'academic_performance',
-    'study_load',
-    'peer_pressure',
-    'extracurricular_activities',
-    'bullying',
-    'mental_health_history_Ada',       # Dummy variable for 'Ada'
-    'mental_health_history_Tidak Ada'  # Dummy variable for 'Tidak Ada'
-]
+# --- BLOK DEBUGGING KRITIS: Mengambil kolom yang diharapkan dari model ---
+# Jika model memiliki atribut feature_names_in_, gunakan itu.
+if hasattr(model, 'feature_names_in_'):
+    MODEL_EXPECTED_COLUMNS = list(model.feature_names_in_)
+else:
+    # Jika tidak ada, gunakan daftar yang didefinisikan secara manual sebagai fallback.
+    MODEL_EXPECTED_COLUMNS = [
+        'academic_performance',
+        'study_load',
+        'peer_pressure',
+        'extracurricular_activities',
+        'bullying',
+        'mental_health_history_Ada',       # Dummy variable for 'Ada'
+        'mental_health_history_Tidak Ada'  # Dummy variable for 'Tidak Ada'
+    ]
 
 # Streamlit app title
 st.title('Prediksi Tingkat Stres Mahasiswa')
@@ -36,7 +41,7 @@ def user_input_features():
     # Sliders and selectbox for collecting user input
     academic_performance = st.sidebar.slider('Peforma Akademik (1=Rendah, 5=Tinggi)', 1, 5, 3)
     study_load = st.sidebar.slider('Beban Belajar (1=Ringan, 5=Berat)', 1, 5, 3)
-    peer_pressure = st.sidebar.slider('Tekanan Teman (1=Rendah, 5=Tinggi)', 1, 5, 3) # Perbaikan typo 'Temar' menjadi 'Teman'
+    peer_pressure = st.sidebar.slider('Tekanan Teman (1=Rendah, 5=Tinggi)', 1, 5, 3) 
     extracurricular_activities = st.sidebar.slider('Kegiatan Ekstrakurikuler (1=Sedikit, 5=Banyak)', 1, 5, 3)
     bullying = st.sidebar.slider('Bullying (1=Tidak Ada, 5=Sering)', 1, 5, 3)
     mental_health_history = st.sidebar.selectbox('Riwayat Mental', ['Tidak Ada', 'Ada'])
@@ -62,20 +67,33 @@ st.dataframe(df_input, use_container_width=True)
 # --- Data Preparation for Prediction ---
 
 # Create an empty DataFrame initialized with all zeros and the exact columns expected by the model
-# Ini adalah langkah penting untuk menghindari ValueError
 final_input_df = pd.DataFrame(np.zeros((1, len(MODEL_EXPECTED_COLUMNS))), columns=MODEL_EXPECTED_COLUMNS)
 
 # Populate numerical features using the values from the user input DataFrame (df_input)
 for col in ['academic_performance', 'study_load', 'peer_pressure', 'extracurricular_activities', 'bullying']:
-    final_input_df[col] = df_input[col][0]
+    if col in final_input_df.columns:
+        final_input_df[col] = df_input[col][0]
 
 # Populate the one-hot encoded categorical feature
+
+# --- LOGIKA PENYESUAIAN NAMA KOLOM DUMMY ---
 mhh_value = df_input['mental_health_history'][0]
-dummy_col_name = f"mental_health_history_{mhh_value}"
+dummy_col_name = None
+
+# Mencari nama kolom dummy yang cocok dalam MODEL_EXPECTED_COLUMNS
+# Ini mengatasi masalah perbedaan spasi/kapitalisasi pada 'Ada' atau 'Tidak Ada'
+for col in MODEL_EXPECTED_COLUMNS:
+    if col.startswith('mental_health_history_') and col.endswith(mhh_value):
+        dummy_col_name = col
+        break
 
 # Set the relevant dummy variable to 1
-if dummy_col_name in final_input_df.columns:
+if dummy_col_name and dummy_col_name in final_input_df.columns:
     final_input_df[dummy_col_name] = 1
+else:
+    # Tampilkan error jika tidak dapat menemukan kolom dummy, ini menandakan masalah serius pada model.pkl
+    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Cek kembali model Anda.")
+
 
 # Make prediction
 if st.sidebar.button('Prediksi Tingkat Stres'):
@@ -97,7 +115,7 @@ if st.sidebar.button('Prediksi Tingkat Stres'):
             st.error("Tingkat Stres Tinggi. Sangat disarankan untuk mencari bantuan.")
 
     except Exception as e:
-        st.error("Terjadi kesalahan saat melakukan prediksi.")
+        st.error("Terjadi kesalahan saat melakukan prediksi. Pastikan semua kolom input sesuai.")
         st.exception(e)
 
 st.sidebar.markdown('---')
