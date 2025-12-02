@@ -6,6 +6,16 @@ import joblib
 # Load the trained model
 model = joblib.load('linear_regression_model.pkl') # Changed model filename and loading method
 
+MODEL_EXPECTED_COLUMNS = [
+    'academic_performance',
+    'study_load',
+    'peer_pressure',
+    'extracurricular_activities',
+    'bullying',
+    'mental_health_history_Ada',      # Dummy variable untuk 'Ada'
+    'mental_health_history_Tidak Ada' # Dummy variable untuk 'Tidak Ada'
+]
+
 # Streamlit app title
 st.title('Prediksi Tingkat Stres Mahasiswa')
 st.write('Aplikasi untuk memprediksi tingkat stres mahasiswa.')
@@ -14,11 +24,11 @@ st.write('Aplikasi untuk memprediksi tingkat stres mahasiswa.')
 st.sidebar.header('Input Parameter')
 
 def user_input_features():
-    academic_performance = st.sidebar.slider('Peforma Akademik', 1, 2, 3, 4, 5)
-    study_load = st.sidebar.slider('Beban Belajar', 1, 2, 3, 4, 5)
-    peer_pressure = st.sidebar.slider('Tekanan Teman', 1, 2, 3, 4, 5)
-    extracurricular_activities = st.sidebar.slider('Kegiatan Ekstrakurikuler', 1, 2, 3, 4, 5)
-    bullying = st.sidebar.slider('Peforma Akademik', 1, 2, 3, 4, 5)
+    academic_performance = st.sidebar.slider('Peforma Akademik', 1, 5 ,3)
+    study_load = st.sidebar.slider('Beban Belajar', 1, 5 ,3)
+    peer_pressure = st.sidebar.slider('Tekanan Teman', 1, 5 ,3)
+    extracurricular_activities = st.sidebar.slider('Kegiatan Ekstrakurikuler', 1, 5 ,3)
+    bullying = st.sidebar.slider('Peforma Akademik', 1, 5 ,3)
 
     mental_health_history = st.sidebar.selectbox('Riwayat Mental', ['Ada', 'Tidak Ada'])
 
