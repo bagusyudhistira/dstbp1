@@ -28,7 +28,7 @@ def user_input_features():
     study_load = st.sidebar.slider('Beban Belajar', 1, 5 ,3)
     peer_pressure = st.sidebar.slider('Tekanan Teman', 1, 5 ,3)
     extracurricular_activities = st.sidebar.slider('Kegiatan Ekstrakurikuler', 1, 5 ,3)
-    bullying = st.sidebar.slider('Peforma Akademik', 1, 5 ,3)
+    bullying = st.sidebar.slider('bullying', 1, 5 ,3)
 
     mental_health_history = st.sidebar.selectbox('Riwayat Mental', ['Ada', 'Tidak Ada'])
 
