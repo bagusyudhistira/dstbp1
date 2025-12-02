@@ -6,9 +6,9 @@ import numpy as np
 # Load the trained model
 # IMPORTANT: Pastikan 'linear_regression_model.pkl' ditempatkan dengan benar dan disimpan dengan joblib.
 try:
-    model = joblib.load('linear_regression_model.pkl')
+    model = joblib.load('rfr_model.pkl')
 except FileNotFoundError:
-    st.error("Error: Model file 'linear_regression_model.pkl' not found. Please ensure it is in the same directory.")
+    st.error("Error: Model file 'rfr_model.pkl' not found. Please ensure it is in the same directory.")
     st.stop()
 except Exception as e:
     st.error(f"Error loading model: {e}")
