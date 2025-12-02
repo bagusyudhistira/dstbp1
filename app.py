@@ -3,38 +3,41 @@ import pandas as pd
 import joblib
 import numpy as np
 
+# --- KONFIGURASI NAMA FILE MODEL ---
+# GANTI NAMA FILE DI SINI JIKA ANDA MENGGUNAKAN MODEL BARU (Contoh: 'random_forest_model.pkl')
+MODEL_FILENAME = 'rfr_model.pkl'
+
 # Load the trained model
-# IMPORTANT: Pastikan 'linear_regression_model.pkl' ditempatkan dengan benar dan disimpan dengan joblib.
 try:
-    model = joblib.load('linear_regression_model.pkl')
+    model = joblib.load(MODEL_FILENAME)
 except FileNotFoundError:
-    st.error("Error: Model file 'linear_regression_model.pkl' not found. Please ensure it is in the same directory.")
+    st.error(f"Error: Model file '{MODEL_FILENAME}' not found. Pastikan file tersebut ada di direktori yang sama.")
     st.stop()
 except Exception as e:
     st.error(f"Error loading model: {e}")
     st.stop()
 
-# --- BLOK DEBUGGING KRITIS: Mengambil kolom yang diharapkan dari model ---
-# Karena error menunjukkan model mengharapkan *_0 dan *_1, kita ganti fallback column names.
-if hasattr(model, 'feature_names_in_'):
-    MODEL_EXPECTED_COLUMNS = list(model.feature_names_in_)
-else:
-    # Menggunakan nama kolom yang DITUNJUKKAN oleh error traceback (mental_health_history_1)
-    MODEL_EXPECTED_COLUMNS = [
-        'academic_performance',
-        'study_load',
-        'peer_pressure',
-        'extracurricular_activities',
-        'bullying',
-        'mental_health_history_0',       # Diperkirakan untuk 'Tidak Ada'
-        'mental_health_history_1'       # Diperkirakan untuk 'Ada'
-    ]
+# --- BLOK PENYESUAIAN NAMA KOLOM SECARA DEFINITIF ---
+# Berdasarkan error traceback yang berulang, model HANYA menerima format _0 dan _1.
+# Kami menerapkan solusi yang diminta model.
 
-# Mapping untuk konversi pilihan pengguna ke kolom dummy yang diharapkan model
+# Kolom yang DILIHAT oleh model saat training (DIPAKSA menggunakan _0 dan _1)
+MODEL_EXPECTED_COLUMNS = [
+    'academic_performance', 
+    'study_load', 
+    'peer_pressure', 
+    'extracurricular_activities', 
+    'bullying',
+    'mental_health_history_0',       # Kolom untuk 'Tidak Ada'
+    'mental_health_history_1'        # Kolom untuk 'Ada'
+]
+
+# Mapping yang Sesuai dengan Kolom Model
 DUMMY_COLUMN_MAPPING = {
     'Tidak Ada': 'mental_health_history_0',
     'Ada': 'mental_health_history_1'
 }
+
 
 # Streamlit app title
 st.title('Prediksi Tingkat Stres Mahasiswa')
@@ -72,32 +75,32 @@ st.dataframe(df_input, use_container_width=True)
 
 # --- Data Preparation for Prediction ---
 
-# Create an empty DataFrame initialized with all zeros and the exact columns expected by the model
+# Membuat DataFrame dengan semua kolom model yang diharapkan, diisi nol
 final_input_df = pd.DataFrame(np.zeros((1, len(MODEL_EXPECTED_COLUMNS))), columns=MODEL_EXPECTED_COLUMNS)
 
-# Populate numerical features using the values from the user input DataFrame (df_input)
+# Populate numerical features
 for col in ['academic_performance', 'study_load', 'peer_pressure', 'extracurricular_activities', 'bullying']:
     if col in final_input_df.columns:
         final_input_df[col] = df_input[col][0]
 
 # Populate the one-hot encoded categorical feature
-
-# --- LOGIKA PENYESUAIAN NAMA KOLOM DUMMY YANG TEPAT (MENGGUNAKAN _0 DAN _1) ---
 mhh_value = df_input['mental_health_history'][0]
 dummy_col_name = DUMMY_COLUMN_MAPPING.get(mhh_value)
 
 # Set the relevant dummy variable to 1
 if dummy_col_name and dummy_col_name in final_input_df.columns:
     final_input_df[dummy_col_name] = 1
-else:
-    # Tampilkan error jika tidak dapat menemukan kolom dummy, ini menandakan masalah serius pada model.pkl
-    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Cek kembali model Anda. Kolom yang diharapkan adalah 'mental_health_history_0' dan 'mental_health_history_1'.")
+# else block yang menampilkan error telah dihapus untuk menghindari false positive
 
+# --- DEBUGGING: Tampilkan kolom yang akan diprediksi ---
+st.markdown("---")
+st.caption(f"Kolom yang dikirim ke model untuk prediksi: {final_input_df.columns.tolist()}")
+st.markdown("---")
 
 # Make prediction
 if st.sidebar.button('Prediksi Tingkat Stres'):
     try:
-        # Perform prediction using the correctly structured final_input_df
+        # PENTING: final_input_df sudah memiliki urutan kolom yang sama dengan MODEL_EXPECTED_COLUMNS
         prediction = model.predict(final_input_df)
         
         # Ensure prediction is a float and format the result
@@ -114,7 +117,8 @@ if st.sidebar.button('Prediksi Tingkat Stres'):
             st.error("Tingkat Stres Tinggi. Sangat disarankan untuk mencari bantuan.")
 
     except Exception as e:
-        st.error("Terjadi kesalahan saat melakukan prediksi. Pastikan semua kolom input sesuai.")
+        # Jika error terjadi di sini, itu karena masalah pada model, bukan lagi pada dataframe input.
+        st.error("Terjadi kesalahan saat melakukan prediksi. Pastikan semua kolom input (terutama nama kolom) sudah sesuai dengan model yang disimpan.")
         st.exception(e)
 
 st.sidebar.markdown('---')
