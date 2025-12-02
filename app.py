@@ -14,12 +14,13 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     st.stop()
 
-# --- BLOK DEBUGGING KRITIS: Mengambil kolom yang diharapkan dari model ---
-# Karena error menunjukkan model mengharapkan *_0 dan *_1, kita ganti fallback column names.
+# --- Mengambil kolom yang diharapkan dari model secara definitif ---
+# Prioritas: 1. Kolom dari model. 2. Kolom fallback (menggunakan _0 dan _1).
 if hasattr(model, 'feature_names_in_'):
+    # Mengambil daftar kolom yang digunakan saat training dari atribut model (cara paling aman)
     MODEL_EXPECTED_COLUMNS = list(model.feature_names_in_)
 else:
-    # Menggunakan nama kolom yang DITUNJUKKAN oleh error traceback (mental_health_history_1)
+    # Fallback ke nama kolom yang ditunjukkan oleh error traceback (_0 dan _1)
     MODEL_EXPECTED_COLUMNS = [
         'academic_performance',
         'study_load',
@@ -29,8 +30,11 @@ else:
         'mental_health_history_0',       # Diperkirakan untuk 'Tidak Ada'
         'mental_health_history_1'       # Diperkirakan untuk 'Ada'
     ]
+    # NOTE: Jika model Anda menggunakan nama kolom 'mental_health_history_Ada' dan 'mental_health_history_Tidak Ada',
+    # Anda harus mengganti baris di atas secara manual agar sesuai.
 
 # Mapping untuk konversi pilihan pengguna ke kolom dummy yang diharapkan model
+# Ini harus sinkron dengan MODEL_EXPECTED_COLUMNS
 DUMMY_COLUMN_MAPPING = {
     'Tidak Ada': 'mental_health_history_0',
     'Ada': 'mental_health_history_1'
@@ -72,17 +76,15 @@ st.dataframe(df_input, use_container_width=True)
 
 # --- Data Preparation for Prediction ---
 
-# Create an empty DataFrame initialized with all zeros and the exact columns expected by the model
+# Membuat DataFrame dengan semua kolom model yang diharapkan, diisi nol
 final_input_df = pd.DataFrame(np.zeros((1, len(MODEL_EXPECTED_COLUMNS))), columns=MODEL_EXPECTED_COLUMNS)
 
-# Populate numerical features using the values from the user input DataFrame (df_input)
+# Populate numerical features
 for col in ['academic_performance', 'study_load', 'peer_pressure', 'extracurricular_activities', 'bullying']:
     if col in final_input_df.columns:
         final_input_df[col] = df_input[col][0]
 
 # Populate the one-hot encoded categorical feature
-
-# --- LOGIKA PENYESUAIAN NAMA KOLOM DUMMY YANG TEPAT (MENGGUNAKAN _0 DAN _1) ---
 mhh_value = df_input['mental_health_history'][0]
 dummy_col_name = DUMMY_COLUMN_MAPPING.get(mhh_value)
 
@@ -90,14 +92,18 @@ dummy_col_name = DUMMY_COLUMN_MAPPING.get(mhh_value)
 if dummy_col_name and dummy_col_name in final_input_df.columns:
     final_input_df[dummy_col_name] = 1
 else:
-    # Tampilkan error jika tidak dapat menemukan kolom dummy, ini menandakan masalah serius pada model.pkl
-    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Cek kembali model Anda. Kolom yang diharapkan adalah 'mental_health_history_0' dan 'mental_health_history_1'.")
+    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Cek kembali model Anda. Kolom yang diharapkan: 'mental_health_history_0' dan 'mental_health_history_1'.")
 
+
+# --- DEBUGGING: Tampilkan kolom yang akan diprediksi ---
+st.markdown("---")
+st.caption(f"Kolom yang dikirim ke model untuk prediksi: {final_input_df.columns.tolist()}")
+st.markdown("---")
 
 # Make prediction
 if st.sidebar.button('Prediksi Tingkat Stres'):
     try:
-        # Perform prediction using the correctly structured final_input_df
+        # PENTING: final_input_df sudah memiliki urutan kolom yang sama dengan MODEL_EXPECTED_COLUMNS
         prediction = model.predict(final_input_df)
         
         # Ensure prediction is a float and format the result
@@ -114,7 +120,8 @@ if st.sidebar.button('Prediksi Tingkat Stres'):
             st.error("Tingkat Stres Tinggi. Sangat disarankan untuk mencari bantuan.")
 
     except Exception as e:
-        st.error("Terjadi kesalahan saat melakukan prediksi. Pastikan semua kolom input sesuai.")
+        # Jika error terjadi di sini, itu karena masalah pada model, bukan lagi pada dataframe input.
+        st.error("Terjadi kesalahan saat melakukan prediksi. Ada masalah dengan struktur data yang diharapkan model.")
         st.exception(e)
 
 st.sidebar.markdown('---')
