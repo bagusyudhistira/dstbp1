@@ -4,6 +4,16 @@ import numpy as np
 import pickle
 import sys
 
+# --- Pemetaan Skala Ordinal (1-5) ---
+# Ini digunakan untuk menampilkan label yang mudah dipahami kepada pengguna
+RATING_MAP = {
+    1: "1 - Sangat Rendah/Buruk",
+    2: "2 - Rendah",
+    3: "3 - Sedang/Normal",
+    4: "4 - Tinggi",
+    5: "5 - Sangat Tinggi/Baik"
+}
+
 # --- Konfigurasi Halaman Streamlit ---
 st.set_page_config(
     page_title="Prediksi Tingkat Stres Mahasiswa",
@@ -66,39 +76,54 @@ if model is not None:
                          'extracurricular_activities', 'bullying', 'mental_health_history_1']
         
     st.sidebar.header("Input Fitur Mahasiswa")
-    st.sidebar.markdown("Silakan masukkan nilai untuk variabel-variabel di bawah ini (Skala 1-5).")
+    st.sidebar.markdown("Silakan masukkan nilai untuk variabel-variabel di bawah ini.")
 
     # --- Kolom Input Variabel Ordinal/Skala ---
     
-    # Fungsi untuk membuat slider input
-    def create_slider(label, key, help_text, options, default_value):
+    # Fungsi untuk membuat slider input dengan label teks
+    def create_labeled_slider(label, key, help_text, options, default_value, rating_map):
         return st.sidebar.select_slider(
             label,
             options=options,
             value=default_value,
             key=key,
-            help=help_text
+            help=help_text,
+            # Format_func akan menampilkan teks, tetapi mengembalikan nilai integer
+            format_func=lambda x: rating_map.get(x, str(x))
         )
 
-    academic_performance = create_slider(
+    # Catatan: Kita menggunakan daftar opsi [1, 2, 3, 4, 5] untuk mendapatkan nilai integer.
+    
+    academic_performance = create_labeled_slider(
         'Kinerja Akademik', 'ap', "Skala 1 (Sangat Buruk) hingga 5 (Sangat Baik).",
-        options=[1, 2, 3, 4, 5], default_value=3
+        options=[1, 2, 3, 4, 5], default_value=3, rating_map=RATING_MAP
     )
-    study_load = create_slider(
+    study_load = create_labeled_slider(
         'Beban Belajar', 'sl', "Skala 1 (Sangat Ringan) hingga 5 (Sangat Berat).",
-        options=[1, 2, 3, 4, 5], default_value=3
+        options=[1, 2, 3, 4, 5], default_value=3, rating_map=RATING_MAP
     )
-    peer_pressure = create_slider(
+    peer_pressure = create_labeled_slider(
         'Tekanan Teman Sebaya', 'pp', "Skala 1 (Sangat Rendah) hingga 5 (Sangat Tinggi).",
-        options=[1, 2, 3, 4, 5], default_value=3
+        options=[1, 2, 3, 4, 5], default_value=3, rating_map=RATING_MAP
     )
-    extracurricular_activities = create_slider(
-        'Kegiatan Ekstrakurikuler', 'ea', "Skala 0 (Tidak Ada) hingga 5 (Sangat Banyak).",
-        options=[0, 1, 2, 3, 4, 5], default_value=3
+    
+    # Perlakuan khusus untuk extracurricular_activities yang dimulai dari 0
+    extracurricular_options = {
+        0: "0 - Tidak Ada", 1: "1 - Sangat Rendah", 2: "2 - Rendah", 
+        3: "3 - Sedang", 4: "4 - Tinggi", 5: "5 - Sangat Banyak"
+    }
+    extracurricular_activities = st.sidebar.select_slider(
+        'Kegiatan Ekstrakurikuler',
+        options=[0, 1, 2, 3, 4, 5],
+        value=3,
+        key='ea',
+        help="Skala 0 (Tidak Ada) hingga 5 (Sangat Banyak).",
+        format_func=lambda x: extracurricular_options.get(x, str(x))
     )
-    bullying = create_slider(
+    
+    bullying = create_labeled_slider(
         'Pengalaman Perundungan', 'b', "Skala 1 (Tidak Pernah) hingga 5 (Sangat Sering).",
-        options=[1, 2, 3, 4, 5], default_value=3
+        options=[1, 2, 3, 4, 5], default_value=3, rating_map=RATING_MAP
     )
 
     # --- Input Variabel Biner ---
@@ -113,7 +138,6 @@ if model is not None:
 
     # --- Persiapan Input Data untuk Model ---
     
-    # Siapkan data dalam bentuk list
     input_values = {
         'academic_performance': academic_performance,
         'study_load': study_load,
