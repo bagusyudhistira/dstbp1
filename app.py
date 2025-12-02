@@ -15,20 +15,26 @@ except Exception as e:
     st.stop()
 
 # --- BLOK DEBUGGING KRITIS: Mengambil kolom yang diharapkan dari model ---
-# Jika model memiliki atribut feature_names_in_, gunakan itu.
+# Karena error menunjukkan model mengharapkan *_0 dan *_1, kita ganti fallback column names.
 if hasattr(model, 'feature_names_in_'):
     MODEL_EXPECTED_COLUMNS = list(model.feature_names_in_)
 else:
-    # Jika tidak ada, gunakan daftar yang didefinisikan secara manual sebagai fallback.
+    # Menggunakan nama kolom yang DITUNJUKKAN oleh error traceback (mental_health_history_1)
     MODEL_EXPECTED_COLUMNS = [
         'academic_performance',
         'study_load',
         'peer_pressure',
         'extracurricular_activities',
         'bullying',
-        'mental_health_history_Ada',       # Dummy variable for 'Ada'
-        'mental_health_history_Tidak Ada'  # Dummy variable for 'Tidak Ada'
+        'mental_health_history_0',       # Diperkirakan untuk 'Tidak Ada'
+        'mental_health_history_1'       # Diperkirakan untuk 'Ada'
     ]
+
+# Mapping untuk konversi pilihan pengguna ke kolom dummy yang diharapkan model
+DUMMY_COLUMN_MAPPING = {
+    'Tidak Ada': 'mental_health_history_0',
+    'Ada': 'mental_health_history_1'
+}
 
 # Streamlit app title
 st.title('Prediksi Tingkat Stres Mahasiswa')
@@ -76,23 +82,16 @@ for col in ['academic_performance', 'study_load', 'peer_pressure', 'extracurricu
 
 # Populate the one-hot encoded categorical feature
 
-# --- LOGIKA PENYESUAIAN NAMA KOLOM DUMMY ---
+# --- LOGIKA PENYESUAIAN NAMA KOLOM DUMMY YANG TEPAT (MENGGUNAKAN _0 DAN _1) ---
 mhh_value = df_input['mental_health_history'][0]
-dummy_col_name = None
-
-# Mencari nama kolom dummy yang cocok dalam MODEL_EXPECTED_COLUMNS
-# Ini mengatasi masalah perbedaan spasi/kapitalisasi pada 'Ada' atau 'Tidak Ada'
-for col in MODEL_EXPECTED_COLUMNS:
-    if col.startswith('mental_health_history_') and col.endswith(mhh_value):
-        dummy_col_name = col
-        break
+dummy_col_name = DUMMY_COLUMN_MAPPING.get(mhh_value)
 
 # Set the relevant dummy variable to 1
 if dummy_col_name and dummy_col_name in final_input_df.columns:
     final_input_df[dummy_col_name] = 1
 else:
     # Tampilkan error jika tidak dapat menemukan kolom dummy, ini menandakan masalah serius pada model.pkl
-    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Cek kembali model Anda.")
+    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Cek kembali model Anda. Kolom yang diharapkan adalah 'mental_health_history_0' dan 'mental_health_history_1'.")
 
 
 # Make prediction
