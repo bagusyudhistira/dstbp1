@@ -59,7 +59,7 @@ def user_input_features():
     mental_health_history = st.sidebar.selectbox('Riwayat Mental', ['Tidak Ada', 'Ada'])
 
     data = {
-        'living_conditions': living_conditions
+        'living_conditions': living_conditions,
         'basic_needs': basic_needs,
         'academic_performance': academic_performance,
         'study_load': study_load,
