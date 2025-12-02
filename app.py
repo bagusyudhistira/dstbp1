@@ -1,19 +1,28 @@
 import streamlit as st
 import pandas as pd
-import pickle
 import joblib
+import numpy as np
 
 # Load the trained model
-model = joblib.load('linear_regression_model.pkl') # Changed model filename and loading method
+# IMPORTANT: Ensure 'linear_regression_model.pkl' is correctly placed and saved with joblib.
+try:
+    model = joblib.load('linear_regression_model.pkl')
+except FileNotFoundError:
+    st.error("Error: Model file 'linear_regression_model.pkl' not found. Please ensure it is in the same directory.")
+    st.stop()
+except Exception as e:
+    st.error(f"Error loading model: {e}")
+    st.stop()
 
+# Define the exact features and order the model was trained on
 MODEL_EXPECTED_COLUMNS = [
     'academic_performance',
     'study_load',
     'peer_pressure',
     'extracurricular_activities',
     'bullying',
-    'mental_health_history_Ada',      # Dummy variable untuk 'Ada'
-    'mental_health_history_Tidak Ada' # Dummy variable untuk 'Tidak Ada'
+    'mental_health_history_Ada',       # Dummy variable for 'Ada'
+    'mental_health_history_Tidak Ada'  # Dummy variable for 'Tidak Ada'
 ]
 
 # Streamlit app title
@@ -24,13 +33,13 @@ st.write('Aplikasi untuk memprediksi tingkat stres mahasiswa.')
 st.sidebar.header('Input Parameter')
 
 def user_input_features():
-    academic_performance = st.sidebar.slider('Peforma Akademik', 1, 5 ,3)
-    study_load = st.sidebar.slider('Beban Belajar', 1, 5 ,3)
-    peer_pressure = st.sidebar.slider('Tekanan Teman', 1, 5 ,3)
-    extracurricular_activities = st.sidebar.slider('Kegiatan Ekstrakurikuler', 1, 5 ,3)
-    bullying = st.sidebar.slider('bullying', 1, 5 ,3)
-
-    mental_health_history = st.sidebar.selectbox('Riwayat Mental', ['Ada', 'Tidak Ada'])
+    # Sliders and selectbox for collecting user input
+    academic_performance = st.sidebar.slider('Peforma Akademik (1=Rendah, 5=Tinggi)', 1, 5, 3)
+    study_load = st.sidebar.slider('Beban Belajar (1=Ringan, 5=Berat)', 1, 5, 3)
+    peer_pressure = st.sidebar.slider('Tekanan Temar (1=Rendah, 5=Tinggi)', 1, 5, 3)
+    extracurricular_activities = st.sidebar.slider('Kegiatan Ekstrakurikuler (1=Sedikit, 5=Banyak)', 1, 5, 3)
+    bullying = st.sidebar.slider('Bullying (1=Tidak Ada, 5=Sering)', 1, 5, 3)
+    mental_health_history = st.sidebar.selectbox('Riwayat Mental', ['Tidak Ada', 'Ada'])
 
     data = {
         'academic_performance': academic_performance,
@@ -38,56 +47,58 @@ def user_input_features():
         'peer_pressure': peer_pressure,
         'extracurricular_activities': extracurricular_activities,
         'bullying': bullying,
-        'mental_health_history':mental_health_history
+        'mental_health_history': mental_health_history
     }
-    features = pd.DataFrame(data, index=[0])
-    return features
+    # Return the data as a simple DataFrame for display purposes
+    return pd.DataFrame(data, index=[0])
 
+# Collect user input
 df_input = user_input_features()
 
 st.subheader('Parameter Input Pengguna:')
-st.write(df_input)
+st.dataframe(df_input, use_container_width=True)
 
-# Define the exact columns and their dtypes expected by the model during training
-# This list ensures correct order and includes all dummy variables used during training
-training_columns_and_dtypes = {
-    'academic_performance': 'int64',
-    'study_load': 'int64',
-    'peer_pressure': 'int64',
-    'extracurricular_activities': 'int64',
-    'bullying': 'int64',
-    'mental_health_history': 'bool'
-}
 
-# Create an empty DataFrame with the correct columns and dtypes
-final_input_df = pd.DataFrame(columns=training_columns_and_dtypes.keys())
-for col, dtype in training_columns_and_dtypes.items():
-    final_input_df[col] = final_input_df[col].astype(dtype)
+# --- Data Preparation for Prediction ---
 
-# Add a single row of data, initially all zeros/False
-final_input_df.loc[0] = 0
-for col, dtype in training_columns_and_dtypes.items():
-    if dtype == 'bool':
-        final_input_df.loc[0, col] = False
+# Create an empty DataFrame initialized with all zeros and the exact columns expected by the model
+# This is the crucial step to avoid the ValueError
+final_input_df = pd.DataFrame(np.zeros((1, len(MODEL_EXPECTED_COLUMNS))), columns=MODEL_EXPECTED_COLUMNS)
 
-# Populate numerical features
-final_input_df.loc[0, 'academic_performance'] = df_input['academic_performance'][0]
-final_input_df.loc[0, 'study_load'] = df_input['study_load'][0]
-final_input_df.loc[0, 'peer_pressure'] = df_input['peer_pressure'][0]
-final_input_df.loc[0, 'extracurricular_activities'] = df_input['extracurricular_activities'][0]
-final_input_df.loc[0, 'bullying'] = df_input['bullying'][0]
+# Populate numerical features using the values from the user input DataFrame (df_input)
+for col in ['academic_performance', 'study_load', 'peer_pressure', 'extracurricular_activities', 'bullying']:
+    final_input_df[col] = df_input[col][0]
 
-# Populate one-hot encoded categorical features
-selected_mhh_col = f"mental_health_history_{df_input['mental_health_history'][0]}"
-if selected_mhh_col in final_input_df.columns:
-    final_input_df.loc[0, selected_mhh_col] = True
+# Populate the one-hot encoded categorical feature
+mhh_value = df_input['mental_health_history'][0]
+dummy_col_name = f"mental_health_history_{mhh_value}"
+
+# Set the relevant dummy variable to 1
+if dummy_col_name in final_input_df.columns:
+    final_input_df[dummy_col_name] = 1
 
 # Make prediction
-if st.sidebar.button('Prediksi Tingkat'):
+if st.sidebar.button('Prediksi Tingkat Stres'):
     try:
-        prediction = model.predict(final_input_df) # Use the new DataFrame name
-        st.subheader('Hasil Tingkat Stres:')
-        st.write(f"Tingkat Stress diprediksi : Level {prediction[0]:,.2f}")
+        # Perform prediction using the correctly structured final_input_df
+        prediction = model.predict(final_input_df)
+        
+        # Ensure prediction is a float and format the result
+        predicted_level = float(prediction[0])
+        
+        st.subheader('Hasil Prediksi Tingkat Stres:')
+        st.markdown(f"**Tingkat Stres diprediksi : Level `{predicted_level:.2f}`**")
+
+        if predicted_level < 2:
+            st.success("Tingkat Stres Rendah.")
+        elif predicted_level < 3.5:
+            st.warning("Tingkat Stres Sedang. Perlu perhatian.")
+        else:
+            st.error("Tingkat Stres Tinggi. Sangat disarankan untuk mencari bantuan.")
+
     except Exception as e:
-        st.error(f"Terjadi kesalahan saat melakukan prediksi: {e}")
-        st.exception(e) # Show full traceback
+        st.error("Terjadi kesalahan saat melakukan prediksi.")
+        st.exception(e)
+
+st.sidebar.markdown('---')
+st.sidebar.markdown('Skala Stres: 1 (Sangat Rendah) - 5 (Sangat Tinggi)')
