@@ -4,7 +4,7 @@ import joblib
 import numpy as np
 
 # Load the trained model
-# IMPORTANT: Ensure 'linear_regression_model.pkl' is correctly placed and saved with joblib.
+# IMPORTANT: Pastikan 'linear_regression_model.pkl' ditempatkan dengan benar dan disimpan dengan joblib.
 try:
     model = joblib.load('linear_regression_model.pkl')
 except FileNotFoundError:
@@ -36,7 +36,7 @@ def user_input_features():
     # Sliders and selectbox for collecting user input
     academic_performance = st.sidebar.slider('Peforma Akademik (1=Rendah, 5=Tinggi)', 1, 5, 3)
     study_load = st.sidebar.slider('Beban Belajar (1=Ringan, 5=Berat)', 1, 5, 3)
-    peer_pressure = st.sidebar.slider('Tekanan Temar (1=Rendah, 5=Tinggi)', 1, 5, 3)
+    peer_pressure = st.sidebar.slider('Tekanan Teman (1=Rendah, 5=Tinggi)', 1, 5, 3) # Perbaikan typo 'Temar' menjadi 'Teman'
     extracurricular_activities = st.sidebar.slider('Kegiatan Ekstrakurikuler (1=Sedikit, 5=Banyak)', 1, 5, 3)
     bullying = st.sidebar.slider('Bullying (1=Tidak Ada, 5=Sering)', 1, 5, 3)
     mental_health_history = st.sidebar.selectbox('Riwayat Mental', ['Tidak Ada', 'Ada'])
@@ -62,7 +62,7 @@ st.dataframe(df_input, use_container_width=True)
 # --- Data Preparation for Prediction ---
 
 # Create an empty DataFrame initialized with all zeros and the exact columns expected by the model
-# This is the crucial step to avoid the ValueError
+# Ini adalah langkah penting untuk menghindari ValueError
 final_input_df = pd.DataFrame(np.zeros((1, len(MODEL_EXPECTED_COLUMNS))), columns=MODEL_EXPECTED_COLUMNS)
 
 # Populate numerical features using the values from the user input DataFrame (df_input)
