@@ -21,8 +21,11 @@ if hasattr(model, 'feature_names_in_'):
 else:
     # Menggunakan nama kolom yang DITUNJUKKAN oleh error traceback (mental_health_history_1)
     MODEL_EXPECTED_COLUMNS = [
+        'living_conditions',
+        'basic_needs',
         'academic_performance',
-        'study_load',
+        'study_load'
+        'social_support',
         'peer_pressure',
         'extracurricular_activities',
         'bullying',
@@ -45,16 +48,22 @@ st.sidebar.header('Input Parameter')
 
 def user_input_features():
     # Sliders and selectbox for collecting user input
+    living_conditions = st.sidebar.slider('Kondisi Hidup (1=Rendah, 5=Tinggi)', 1, 5, 3)\
+    basic_needs = st.sidebar.slider('Kebutuhan (1=Rendah, 5=Tinggi)', 1, 5, 3)
     academic_performance = st.sidebar.slider('Peforma Akademik (1=Rendah, 5=Tinggi)', 1, 5, 3)
     study_load = st.sidebar.slider('Beban Belajar (1=Ringan, 5=Berat)', 1, 5, 3)
+    social_support = st.sidebar.slider('Support Sosial (1=Ringan, 5=Berat)', 1, 3, 2)
     peer_pressure = st.sidebar.slider('Tekanan Teman (1=Rendah, 5=Tinggi)', 1, 5, 3) 
     extracurricular_activities = st.sidebar.slider('Kegiatan Ekstrakurikuler (1=Sedikit, 5=Banyak)', 1, 5, 3)
     bullying = st.sidebar.slider('Bullying (1=Tidak Ada, 5=Sering)', 1, 5, 3)
     mental_health_history = st.sidebar.selectbox('Riwayat Mental', ['Tidak Ada', 'Ada'])
 
     data = {
+        'living_conditions': living_conditions
+        'basic_needs': basic_needs
         'academic_performance': academic_performance,
         'study_load': study_load,
+        'social_support': social_support
         'peer_pressure': peer_pressure,
         'extracurricular_activities': extracurricular_activities,
         'bullying': bullying,
@@ -76,7 +85,7 @@ st.dataframe(df_input, use_container_width=True)
 final_input_df = pd.DataFrame(np.zeros((1, len(MODEL_EXPECTED_COLUMNS))), columns=MODEL_EXPECTED_COLUMNS)
 
 # Populate numerical features using the values from the user input DataFrame (df_input)
-for col in ['academic_performance', 'study_load', 'peer_pressure', 'extracurricular_activities', 'bullying']:
+for col in ['living_conditions', 'basic_needs','academic_performance', 'study_load', 'social_support', 'peer_pressure', 'extracurricular_activities', 'bullying']:
     if col in final_input_df.columns:
         final_input_df[col] = df_input[col][0]
 
