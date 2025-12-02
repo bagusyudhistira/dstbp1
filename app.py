@@ -48,7 +48,7 @@ st.sidebar.header('Input Parameter')
 
 def user_input_features():
     # Sliders and selectbox for collecting user input
-    living_conditions = st.sidebar.slider('Kondisi Hidup (1=Rendah, 5=Tinggi)', 1, 5, 3)\
+    living_conditions = st.sidebar.slider('Kondisi Hidup (1=Rendah, 5=Tinggi)', 1, 5, 3)
     basic_needs = st.sidebar.slider('Kebutuhan (1=Rendah, 5=Tinggi)', 1, 5, 3)
     academic_performance = st.sidebar.slider('Peforma Akademik (1=Rendah, 5=Tinggi)', 1, 5, 3)
     study_load = st.sidebar.slider('Beban Belajar (1=Ringan, 5=Berat)', 1, 5, 3)
