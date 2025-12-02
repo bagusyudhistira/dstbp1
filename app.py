@@ -4,7 +4,7 @@ import joblib
 import numpy as np
 
 # Load the trained model
-# IMPORTANT: Pastikan model ditempatkan dengan benar dan disimpan dengan joblib.
+# IMPORTANT: Pastikan 'gbr_model.pkl' ditempatkan dengan benar dan disimpan dengan joblib.
 try:
     model = joblib.load('gbr_model.pkl')
 except FileNotFoundError:
