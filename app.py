@@ -60,7 +60,7 @@ def user_input_features():
 
     data = {
         'living_conditions': living_conditions
-        'basic_needs': basic_needs
+        'basic_needs': basic_needs,
         'academic_performance': academic_performance,
         'study_load': study_load,
         'social_support': social_support
