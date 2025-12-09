@@ -1,92 +1,117 @@
 import streamlit as st
 import pandas as pd
+import joblib
+import numpy as np
 
-st.title("Prediksi Tingkat Stres Mahasiswa - Versi Sederhana dari Nol")
-st.write("Aplikasi prediksi tingkat stres mahasiswa dengan model linear sederhana.")
+# Load model from .pkl file (pastikan file 'linear_regression_model.pkl' sudah ada di folder yang sama)
+try:
+    model = joblib.load('linear_regression_model.pkl')
+except FileNotFoundError:
+    st.error("Model 'linear_regression_model.pkl' tidak ditemukan. Pastikan file model ada di folder yang sama.")
+    st.stop()
+except Exception as e:
+    st.error(f"Error saat memuat model: {e}")
+    st.stop()
 
-# Fungsi model linear manual dengan koefisien yang ditentukan
-def simple_stress_model(features):
-    """
-    features: dict berisi nilai fitur input.
-    Mengembalikan prediksi skor stres antara 1 sampai 5.
-    """
-    coefs = {
-        'living_conditions': 0.5,        # Kondisi hidup buruk menaikkan stres
-        'basic_needs': 0.6,              # Kebutuhan tidak terpenuhi menaikkan stres
-        'academic_performance': -0.7,    # Akademik tinggi menurunkan stres
-        'study_load': 0.8,               # Beban belajar berat menaikkan stres
-        'social_support': -0.5,          # Support sosial tinggi menurunkan stres
-        'peer_pressure': 0.7,            # Tekanan teman menaikkan stres
-        'extracurricular_activities': 0.3, # Ekstrakurikuler banyak menaikkan stres sedikit
-        'bullying': 1.0,                 # Bullying sering menaikkan stres banyak
-        'mental_health_history': 1.2     # Riwayat penyakit mental menaikkan stres cukup banyak
-    }
-    intercept = 1.0  # Nilai minimal stres
-
-    pred = intercept
-    for key, coef in coefs.items():
-        pred += coef * features[key]
-
-    # Batasi prediksi antara 1 sampai 5 agar sesuai skala stres
-    pred = max(1, min(5, pred))
-    return pred
-
-# Input user melalui sidebar
-st.sidebar.header("Input Parameter")
-
-living_conditions = st.sidebar.slider("Kondisi Hidup (1=Baik, 5=Buruk)", 1, 5, 3)
-basic_needs = st.sidebar.slider("Kebutuhan Tercukupi (1=Baik, 5=Buruk)", 1, 5, 3)
-academic_performance = st.sidebar.slider("Performa Akademik (1=Rendah, 5=Tinggi)", 1, 5, 3)
-study_load = st.sidebar.slider("Beban Belajar (1=Ringan, 5=Berat)", 1, 5, 3)
-social_support = st.sidebar.slider("Support Sosial (1=Rendah, 5=Tinggi)", 1, 5, 3)
-peer_pressure = st.sidebar.slider("Tekanan Teman (1=Rendah, 5=Tinggi)", 1, 5, 3)
-extracurricular_activities = st.sidebar.slider("Kegiatan Ekstrakurikuler (1=Sedikit, 5=Banyak)", 1, 5, 3)
-bullying = st.sidebar.slider("Bullying (1=Tidak Ada, 5=Sering)", 1, 5, 3)
-mental_health_history_str = st.sidebar.selectbox("Riwayat Masalah Kesehatan Mental", ['Tidak Ada', 'Ada'])
-
-features = {
-    'living_conditions': living_conditions,
-    'basic_needs': basic_needs,
-    'academic_performance': academic_performance,
-    'study_load': study_load,
-    'social_support': social_support,
-    'peer_pressure': peer_pressure,
-    'extracurricular_activities': extracurricular_activities,
-    'bullying': bullying,
-    'mental_health_history': 1 if mental_health_history_str == 'Ada' else 0
+# Mapping kolom dummy untuk fitur mental_health_history sesuai model
+DUMMY_COLUMN_MAPPING = {
+    'Tidak Ada': 'mental_health_history_0',
+    'Ada': 'mental_health_history_1'
 }
 
-# Tampilkan parameter input user
+if hasattr(model, 'feature_names_in_'):
+    MODEL_EXPECTED_COLUMNS = list(model.feature_names_in_)
+else:
+    MODEL_EXPECTED_COLUMNS = [
+        'living_conditions',
+        'basic_needs',
+        'academic_performance',
+        'study_load',
+        'social_support',
+        'peer_pressure',
+        'extracurricular_activities',
+        'bullying',
+        'mental_health_history_0',
+        'mental_health_history_1'
+    ]
+
+st.title("Prediksi Tingkat Stres Mahasiswa")
+st.write("Masukkan parameter berikut untuk memprediksi tingkat stres.")
+
+# Sidebar input parameter
+st.sidebar.header("Input Parameter")
+
+def user_input_features():
+    living_conditions = st.sidebar.slider("Kebutuhan Tercukupi (1=Baik, 5=Buruk)", 1, 5, 3)
+    basic_needs = st.sidebar.slider("Performa Akademik (1=Rendah, 5=Tinggi)", 1, 5, 3)
+    study_load = st.sidebar.slider("Beban Belajar (1=Ringan, 5=Berat)", 1, 5, 3)
+    social_support = st.sidebar.slider("Support Sosial (1=Rendah, 5=Tinggi)", 1, 5, 3)
+    peer_pressure = st.sidebar.slider("Tekanan Teman (1=Rendah, 5=Tinggi)", 1, 5, 3)
+    extracurricular_activities = st.sidebar.slider("Kegiatan Ekstrakurikuler (1=Sedikit, 5=Banyak)", 1, 5, 3)
+    bullying = st.sidebar.slider("Bullying (1=Tidak Ada, 5=Sering)", 1, 5, 3)
+    mental_health_history = st.sidebar.selectbox("Riwayat Masalah Kesehatan Mental", ['Tidak Ada', 'Ada'])
+
+    academic_performance = st.sidebar.slider("Performa Akademik (1=Rendah, 5=Tinggi)", 1, 5, 3)
+    
+    data = {
+        'living_conditions': living_conditions,
+        'basic_needs': basic_needs,
+        'academic_performance': academic_performance,
+        'study_load': study_load,
+        'social_support': social_support,
+        'peer_pressure': peer_pressure,
+        'extracurricular_activities': extracurricular_activities,
+        'bullying': bullying,
+        'mental_health_history': mental_health_history
+    }
+    return pd.DataFrame(data, index=[0])
+
+df_input = user_input_features()
 st.subheader("Parameter Input Pengguna:")
-st.write(pd.DataFrame([features]))
+st.dataframe(df_input, use_container_width=True)
+
+# Menyiapkan input ke model sesuai kolom yang diharapkan
+final_input_df = pd.DataFrame(np.zeros((1, len(MODEL_EXPECTED_COLUMNS))), columns=MODEL_EXPECTED_COLUMNS)
+
+# Mengisi fitur numerik
+numerical_features = [
+    'living_conditions', 'basic_needs', 'academic_performance', 'study_load',
+    'social_support', 'peer_pressure', 'extracurricular_activities', 'bullying'
+]
+for col in numerical_features:
+    if col in final_input_df.columns:
+        final_input_df[col] = df_input[col].values[0]
+
+# Mengisi dummy fitur mental_health_history
+dummy_col_name = DUMMY_COLUMN_MAPPING.get(df_input['mental_health_history'].values[0])
+if dummy_col_name in final_input_df.columns:
+    final_input_df[dummy_col_name] = 1
+else:
+    st.error(f"Kolom dummy '{dummy_col_name}' tidak ditemukan di model.")
 
 # Tombol prediksi
 if st.sidebar.button("Prediksi Tingkat Stres"):
-    pred = simple_stress_model(features)
-    st.subheader("Hasil Prediksi Tingkat Stres:")
-    st.markdown(f"**Level Stres diprediksi: {pred:.2f} / 5.00**")
+    try:
+        prediction = model.predict(final_input_df)[0]
+        prediction = max(1, min(5, prediction))  # Batasi prediksi di antara 1-5
 
-    if pred < 2:
-        st.success("Tingkat Stres Rendah")
-    elif pred < 3.5:
-        st.warning("Tingkat Stres Sedang. Perlu perhatian.")
-    else:
-        st.error("Tingkat Stres Tinggi. Disarankan mencari bantuan profesional.")
+        st.subheader("Hasil Prediksi Tingkat Stres:")
+        st.markdown(f"**Level Stres diprediksi: {prediction:.2f} / 5.00**")
+        if prediction < 2:
+            st.success("Tingkat Stres Rendah")
+        elif prediction < 3.5:
+            st.warning("Tingkat Stres Sedang. Perlu perhatian.")
+        else:
+            st.error("Tingkat Stres Tinggi. Disarankan mencari bantuan profesional.")
 
-    # Tampilkan bobot dan kontribusi fitur untuk transparansi
-    st.subheader("Bobot Fitur Model:")
-    for k, v in features.items():
-        w = (
-            0.5 if k == 'living_conditions' else
-            0.6 if k == 'basic_needs' else
-            -0.7 if k == 'academic_performance' else
-            0.8 if k == 'study_load' else
-            -0.5 if k == 'social_support' else
-            0.7 if k == 'peer_pressure' else
-            0.3 if k == 'extracurricular_activities' else
-            1.0 if k == 'bullying' else
-            1.2
-        )
-        st.write(f"{k}: bobot {w}, nilai input {v}, kontribusi: {w*v:.2f}")
+        # Tampilkan koefisien model jika ada
+        if hasattr(model, "coef_") and hasattr(model, "intercept_"):
+            st.subheader("Bobot Fitur Model:")
+            for f, c in zip(MODEL_EXPECTED_COLUMNS, model.coef_):
+                val = final_input_df[f].values[0]
+                st.write(f"{f}: bobot {c:.3f}, nilai input {val}, kontribusi {c*val:.3f}")
+            st.write(f"Intercept model: {model.intercept_:.3f}")
 
-    st.write(f"Intercept model: 1.0")
+    except Exception as e:
+        st.error("Terjadi kesalahan saat melakukan prediksi.")
+        st.exception(e)
