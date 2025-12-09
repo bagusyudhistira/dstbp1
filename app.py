@@ -81,15 +81,24 @@ else:
 if st.sidebar.button("Prediksi Tingkat Stres"):
     try:
         pred = model.predict(final_input)[0]
-        # Batasi prediksi di range 1 sampai 5 agar hasil masuk akal
-        pred = max(1, min(5, pred))
+
+        # Tentukan range prediksi linear untuk scaling manual
+        pred_min = 1.0   # estimasi minimal prediksi dari data training (sesuaikan jika perlu)
+        pred_max = 9.2   # estimasi maksimal prediksi dari kombinasi input terbesar (ubah sesuai model Anda)
+
+        # Fungsi scaling prediksi linear ke range 1-5 agar proporsional
+        def scale_prediction(pred_raw, min_pred, max_pred):
+            scaled = 1 + ((pred_raw - min_pred) * 4) / (max_pred - min_pred)
+            return max(1, min(5, scaled))
+
+        pred_scaled = scale_prediction(pred, pred_min, pred_max)
 
         st.subheader("Hasil Prediksi Tingkat Stres:")
-        st.markdown(f"**Level Stres diprediksi: {pred:.2f} / 5.00**")
+        st.markdown(f"**Level Stres diprediksi (skala 1-5): {pred_scaled:.2f}**")
 
-        if pred < 2:
+        if pred_scaled < 2:
             st.success("Tingkat Stres Rendah")
-        elif pred < 3.5:
+        elif pred_scaled < 3.5:
             st.warning("Tingkat Stres Sedang. Perlu Perhatian.")
         else:
             st.error("Tingkat Stres Tinggi. Disarankan mencari bantuan profesional.")
@@ -99,8 +108,8 @@ if st.sidebar.button("Prediksi Tingkat Stres"):
             st.subheader("Bobot Fitur Model dan Kontribusi:")
             for feat, coef in zip(EXPECTED_COLUMNS, model.coef_):
                 val = final_input[feat].values[0]
-                kontribusi = coef * val
-                st.write(f"{feat}: bobot {coef:.3f}, nilai input {val}, kontribusi {kontribusi:.3f}")
+                contrib = coef * val
+                st.write(f"{feat}: bobot {coef:.3f}, nilai {val}, kontribusi {contrib:.3f}")
             st.write(f"Intercept model: {model.intercept_:.3f}")
 
     except Exception as e:
