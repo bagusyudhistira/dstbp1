@@ -105,7 +105,7 @@ if st.sidebar.button('Prediksi Tingkat Stres'):
 
         # Display predicted stress level
         st.subheader('Hasil Prediksi Tingkat Stres:')
-        st.markdown(f"**Tingkat Stres diprediksi : Level `{predicted_level:.2f}`**")
+        st.markdown(f"**Tingkat Stres diprediksi : Level `{predicted_level:.6f}`**")
 
         # Provide feedback based on the predicted level
         if predicted_level < 2:
