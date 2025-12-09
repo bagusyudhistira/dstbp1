@@ -4,7 +4,6 @@ import joblib
 import numpy as np
 
 # Load the trained model
-# IMPORTANT: Pastikan 'linear_regression_model.pkl' dan 'scaler.pkl' ditempatkan dengan benar dan disimpan dengan joblib.
 try:
     model = joblib.load('linear_regression_model.pkl')
 except FileNotFoundError:
@@ -14,7 +13,7 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     st.stop()
 
-# Load scaler if used during model training (optional)
+# Try to load scaler if used during training
 try:
     scaler = joblib.load('scaler.pkl')
     scaler_available = True
@@ -24,12 +23,10 @@ except Exception as e:
     st.error(f"Error loading scaler: {e}")
     scaler_available = False
 
-# --- BLOK DEBUGGING KRITIS: Mengambil kolom yang diharapkan dari model ---
-# Karena error menunjukkan model mengharapkan *_0 dan *_1, kita ganti fallback column names.
+# Determine expected columns from model or fallback columns
 if hasattr(model, 'feature_names_in_'):
     MODEL_EXPECTED_COLUMNS = list(model.feature_names_in_)
 else:
-    # Menggunakan nama kolom yang DITUNJUKKAN oleh error traceback (mental_health_history_1)
     MODEL_EXPECTED_COLUMNS = [
         'living_conditions',
         'basic_needs',
@@ -39,31 +36,30 @@ else:
         'peer_pressure',
         'extracurricular_activities',
         'bullying',
-        'mental_health_history_0',       # Diperkirakan untuk 'Tidak Ada'
-        'mental_health_history_1'        # Diperkirakan untuk 'Ada'
+        'mental_health_history_0',  # Tidak Ada
+        'mental_health_history_1'   # Ada
     ]
 
-# Mapping untuk konversi pilihan pengguna ke kolom dummy yang diharapkan model
+# Mapping for dummy variables of mental health history
 DUMMY_COLUMN_MAPPING = {
     'Tidak Ada': 'mental_health_history_0',
     'Ada': 'mental_health_history_1'
 }
 
-# Streamlit app title
 st.title('Prediksi Tingkat Stres Mahasiswa')
 st.write('Aplikasi untuk memprediksi tingkat stres mahasiswa.')
 
-# Sidebar for user inputs
 st.sidebar.header('Input Parameter')
 
 def user_input_features():
-    # Sliders and selectbox for collecting user input
     living_conditions = st.sidebar.slider('Kondisi Hidup (1=Rendah, 5=Tinggi)', 1, 5, 3)
     basic_needs = st.sidebar.slider('Kebutuhan (1=Rendah, 5=Tinggi)', 1, 5, 3)
-    academic_performance = st.sidebar.slider('Peforma Akademik (1=Rendah, 5=Tinggi)', 1, 5, 3)
+    academic_performance_input = st.sidebar.slider('Peforma Akademik (1=Rendah, 5=Tinggi)', 1, 5, 3)
+    # Membalik skala academic_performance supaya sesuai dengan model (koef negatif)
+    academic_performance = 6 - academic_performance_input
     study_load = st.sidebar.slider('Beban Belajar (1=Ringan, 5=Berat)', 1, 5, 3)
     social_support = st.sidebar.slider('Support Sosial (1=Ringan, 5=Berat)', 1, 3, 2)
-    peer_pressure = st.sidebar.slider('Tekanan Teman (1=Rendah, 5=Tinggi)', 1, 5, 3) 
+    peer_pressure = st.sidebar.slider('Tekanan Teman (1=Rendah, 5=Tinggi)', 1, 5, 3)
     extracurricular_activities = st.sidebar.slider('Kegiatan Ekstrakurikuler (1=Sedikit, 5=Banyak)', 1, 5, 3)
     bullying = st.sidebar.slider('Bullying (1=Tidak Ada, 5=Sering)', 1, 5, 3)
     mental_health_history = st.sidebar.selectbox('Riwayat Mental', ['Tidak Ada', 'Ada'])
@@ -81,50 +77,39 @@ def user_input_features():
     }
     return pd.DataFrame(data, index=[0])
 
-# Collect user input
 df_input = user_input_features()
 
 st.subheader('Parameter Input Pengguna:')
 st.dataframe(df_input, use_container_width=True)
 
-
-# --- Data Preparation for Prediction ---
-
-# Create an empty DataFrame initialized with all zeros and the exact columns expected by the model
+# Prepare data frame with expected columns, filled by zeros
 final_input_df = pd.DataFrame(np.zeros((1, len(MODEL_EXPECTED_COLUMNS))), columns=MODEL_EXPECTED_COLUMNS)
 
-# Populate numerical features using the values from the user input DataFrame (df_input)
+# Set numerical inputs
 for col in ['living_conditions', 'basic_needs', 'academic_performance', 'study_load', 'social_support', 'peer_pressure', 'extracurricular_activities', 'bullying']:
     if col in final_input_df.columns:
         final_input_df[col] = df_input[col][0]
 
-# Populate the one-hot encoded categorical feature
+# Handle dummy variable mental_health_history
 mhh_value = df_input['mental_health_history'][0]
 dummy_col_name = DUMMY_COLUMN_MAPPING.get(mhh_value)
-
-# Set the relevant dummy variable to 1
 if dummy_col_name and dummy_col_name in final_input_df.columns:
     final_input_df[dummy_col_name] = 1
 else:
-    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Cek kembali model Anda.")
+    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'.")
 
-
-# Optional: Scale data if scaler is available
+# Scale input if scaler available
 if scaler_available:
-    # Pastikan urutan kolom pada scaler sesuai dengan final_input_df
     scaled_input = scaler.transform(final_input_df)
 else:
     scaled_input = final_input_df.values
 
-
 if st.sidebar.button('Prediksi Tingkat Stres'):
     try:
-        # Perform prediction using the (optionally) scaled input
         prediction = model.predict(scaled_input)
         predicted_level = float(prediction[0])
         
         st.subheader('Hasil Prediksi Tingkat Stres:')
-
         st.markdown(f"**Tingkat Stres diprediksi : Level `{predicted_level:.2f}`**")
 
         if predicted_level < 2:
@@ -134,13 +119,11 @@ if st.sidebar.button('Prediksi Tingkat Stres'):
         else:
             st.error("Tingkat Stres Tinggi. Sangat disarankan untuk mencari bantuan.")
 
-        # Debug info: show model coefficients and intercept
         st.subheader("Koefisien Model (Feature Coefficients):")
         for feature, coef in zip(MODEL_EXPECTED_COLUMNS, model.coef_):
             st.write(f"{feature}: {coef:.3f}")
         st.write(f"Intercept: {model.intercept_:.3f}")
 
-        # Manual prediction via dot product (untuk verifikasi)
         manual_pred = np.dot(final_input_df.iloc[0], model.coef_) + model.intercept_
         st.write(f"Perhitungan manual prediksi (tanpa scaling): {manual_pred:.3f}")
 
