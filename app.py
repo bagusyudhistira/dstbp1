@@ -105,16 +105,16 @@ else:
     scaled_input = final_input_df.values
 
 # Fungsi untuk melakukan scaling ulang prediksi agar output di range 1-5
-def scale_prediction(pred_raw, pred_min=1.5, pred_max=3.0):
-    # Skalakan linear pred_raw ke range 1 sampai 5
-    scaled = 1 + (pred_raw - pred_min) * (4 / (pred_max - pred_min))
-    scaled = max(1, min(5, scaled))  # Batasi rentang 1 sampai 5
+def scale_prediction_to_1_5(pred_raw, pred_min=1.5, pred_max=3.0):
+    # Linear scaling prediksi pred_raw ke rentang 1-5
+    scaled = 1 + (pred_raw - pred_min) * 4 / (pred_max - pred_min)
+    scaled = max(1, min(5, scaled))
     return scaled
 
 if st.sidebar.button('Prediksi Tingkat Stres'):
     try:
         prediction_raw = model.predict(scaled_input)[0]
-        prediction_scaled = scale_prediction(prediction_raw)
+        prediction_scaled = scale_prediction_to_1_5(prediction_raw)
 
         st.subheader('Hasil Prediksi Tingkat Stres:')
         st.markdown(f"**Tingkat Stres diprediksi : Level `{prediction_scaled:.2f}`**")
