@@ -17,7 +17,7 @@ def map_prediction_to_level(score):
     # Pastikan nilai prediksi tidak negatif
     score = max(score, 0)  # Cegah prediksi negatif
 
-    # Pembagian skala tingkat stres: 1-5
+    # Tentukan batas skala yang lebih halus
     if score < 0.2:
         return "Tingkat Stres Sangat Rendah (1)"
     elif score < 0.4:
