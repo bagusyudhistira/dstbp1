@@ -93,7 +93,7 @@ if dummy_col_name and dummy_col_name in final_input_df.columns:
     final_input_df[dummy_col_name] = 1
 else:
     # If there's an issue with the dummy column mapping, show an error
-    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Kolom yang diharapkan adalah 'mental_health_history_0' dan 'mental_health_history_1'.")
+    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Kolom yang diharapkan adalah 'Tidak Ada' dan 'Ada'.")
 
 # --- Prediction Logic ---
 if st.sidebar.button('Prediksi Tingkat Stres'):
@@ -101,7 +101,7 @@ if st.sidebar.button('Prediksi Tingkat Stres'):
         # Perform prediction using the structured final_input_df
         prediction = model.predict(final_input_df)
         
-        predicted_level = float(prediction[0])  # Ensure the prediction is a float
+        predicted_level = float(prediction[1])  # Ensure the prediction is a float
 
         # Display predicted stress level
         st.subheader('Hasil Prediksi Tingkat Stres:')
