@@ -11,17 +11,19 @@ st.set_page_config(
 )
 
 # --- Pemetaan Kategori Hasil ---
-# Model memprediksi skor kontinu. Kita memetakan skor tersebut ke kategori 0, 1, atau 2.
+# Model memprediksi skor kontinu. Kita memetakan skor tersebut ke kategori 1-5.
 def map_prediction_to_level(score):
-    # Karena stress_level di dataset asli adalah 0, 1, dan 2,
-    # kita bisa menggunakan batas sederhana atau membulatkannya.
-    # Batas yang masuk akal adalah 0.5 dan 1.5.
-    if score < 0.5:
-        return "Tingkat Stres Rendah (0)"
-    elif score < 1.5:
-        return "Tingkat Stres Sedang (1)"
+    # Menyesuaikan skor prediksi untuk membaginya ke dalam kategori 1-5
+    if score < 0.2:
+        return "Tingkat Stres Sangat Rendah (1)"
+    elif score < 0.4:
+        return "Tingkat Stres Rendah (2)"
+    elif score < 0.6:
+        return "Tingkat Stres Sedang (3)"
+    elif score < 0.8:
+        return "Tingkat Stres Tinggi (4)"
     else:
-        return "Tingkat Stres Tinggi (2)"
+        return "Tingkat Stres Sangat Tinggi (5)"
 
 # --- Memuat Model ---
 @st.cache_resource
@@ -124,18 +126,21 @@ if model is not None:
             st.metric(
                 label="Skor Prediksi Kontinu",
                 value=f"{prediction_score:.4f}",
-                help="Skor mentah dari model regresi (nilai antara 0 hingga 2)."
+                help="Skor mentah dari model regresi (nilai antara 0 hingga 1)."
             )
 
         with col2:
             st.markdown("### Tingkat Stres yang Diprediksi")
-            if "Rendah" in stress_level_result:
+            if "Sangat Rendah" in stress_level_result:
                 st.success(stress_level_result)
+            elif "Rendah" in stress_level_result:
+                st.warning(stress_level_result)
             elif "Sedang" in stress_level_result:
                 st.warning(stress_level_result)
+            elif "Tinggi" in stress_level_result:
+                st.error(stress_level_result)
             else:
                 st.error(stress_level_result)
-            st.markdown(f"**Interpretasi:** Nilai dibulatkan ke kategori stres terdekat.")
 
     # --- Bagian Informasi Model (Opsional) ---
     st.markdown("---")
