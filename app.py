@@ -101,7 +101,7 @@ if st.sidebar.button('Prediksi Tingkat Stres'):
         # Perform prediction using the structured final_input_df
         prediction = model.predict(final_input_df)
         
-        predicted_level = float(prediction[1])  # Ensure the prediction is a float
+        predicted_level = float(prediction[0])  # Ensure the prediction is a float
 
         # Display predicted stress level
         st.subheader('Hasil Prediksi Tingkat Stres:')
