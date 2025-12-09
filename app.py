@@ -17,14 +17,14 @@ def map_prediction_to_level(score):
     # Pastikan nilai prediksi tidak negatif
     score = max(score, 0)  # Cegah prediksi negatif
 
-    # Tentukan batas skala yang lebih halus
-    if score < 0.2:
+    # Pembagian skala tingkat stres lebih sensitif dan dinamis
+    if score < 0.1:
         return "Tingkat Stres Sangat Rendah (1)"
-    elif score < 0.4:
+    elif score < 0.3:
         return "Tingkat Stres Rendah (2)"
-    elif score < 0.6:
+    elif score < 0.5:
         return "Tingkat Stres Sedang (3)"
-    elif score < 0.8:
+    elif score < 0.7:
         return "Tingkat Stres Tinggi (4)"
     else:
         return "Tingkat Stres Sangat Tinggi (5)"
