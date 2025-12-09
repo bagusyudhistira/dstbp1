@@ -7,13 +7,13 @@ import numpy as np
 try:
     model = joblib.load('linear_regression_model.pkl')
 except FileNotFoundError:
-    st.error("Error: Model file 'linear_regression_model.pkl' not found. Please ensure it is in the same directory.")
+    st.error("Model file 'linear_regression_model.pkl' tidak ditemukan. Pastikan di direktori yang sama.")
     st.stop()
 except Exception as e:
     st.error(f"Error loading model: {e}")
     st.stop()
 
-# Try to load scaler if used during training
+# Load scaler jika ada (opsional)
 try:
     scaler = joblib.load('scaler.pkl')
     scaler_available = True
@@ -23,7 +23,7 @@ except Exception as e:
     st.error(f"Error loading scaler: {e}")
     scaler_available = False
 
-# Determine expected columns from model or fallback columns
+# Tentukan kolom fitur yang diharapkan model
 if hasattr(model, 'feature_names_in_'):
     MODEL_EXPECTED_COLUMNS = list(model.feature_names_in_)
 else:
@@ -40,14 +40,13 @@ else:
         'mental_health_history_1'   # Ada
     ]
 
-# Mapping for dummy variables of mental health history
 DUMMY_COLUMN_MAPPING = {
     'Tidak Ada': 'mental_health_history_0',
     'Ada': 'mental_health_history_1'
 }
 
 st.title('Prediksi Tingkat Stres Mahasiswa')
-st.write('Aplikasi untuk memprediksi tingkat stres mahasiswa.')
+st.write('Aplikasi memprediksi tingkat stres mahasiswa.')
 
 st.sidebar.header('Input Parameter')
 
@@ -55,7 +54,7 @@ def user_input_features():
     living_conditions = st.sidebar.slider('Kondisi Hidup (1=Rendah, 5=Tinggi)', 1, 5, 3)
     basic_needs = st.sidebar.slider('Kebutuhan (1=Rendah, 5=Tinggi)', 1, 5, 3)
     academic_performance_input = st.sidebar.slider('Peforma Akademik (1=Rendah, 5=Tinggi)', 1, 5, 3)
-    # Membalik skala academic_performance supaya sesuai dengan model (koef negatif)
+    # Membalik skala academic_performance sesuai koef negatif model:
     academic_performance = 6 - academic_performance_input
     study_load = st.sidebar.slider('Beban Belajar (1=Ringan, 5=Berat)', 1, 5, 3)
     social_support = st.sidebar.slider('Support Sosial (1=Ringan, 5=Berat)', 1, 3, 2)
@@ -82,33 +81,34 @@ df_input = user_input_features()
 st.subheader('Parameter Input Pengguna:')
 st.dataframe(df_input, use_container_width=True)
 
-# Prepare data frame with expected columns, filled by zeros
+# Siapkan dataframe input dengan kolom yang tepat dan diisi nol
 final_input_df = pd.DataFrame(np.zeros((1, len(MODEL_EXPECTED_COLUMNS))), columns=MODEL_EXPECTED_COLUMNS)
 
-# Set numerical inputs
-for col in ['living_conditions', 'basic_needs', 'academic_performance', 'study_load', 'social_support', 'peer_pressure', 'extracurricular_activities', 'bullying']:
+# Isi nilai numerik
+for col in ['living_conditions', 'basic_needs', 'academic_performance', 'study_load', 'social_support',
+            'peer_pressure', 'extracurricular_activities', 'bullying']:
     if col in final_input_df.columns:
         final_input_df[col] = df_input[col][0]
 
-# Handle dummy variable mental_health_history
+# Isi dummy variabel riwayat mental
 mhh_value = df_input['mental_health_history'][0]
 dummy_col_name = DUMMY_COLUMN_MAPPING.get(mhh_value)
 if dummy_col_name and dummy_col_name in final_input_df.columns:
     final_input_df[dummy_col_name] = 1
 else:
-    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'.")
+    st.error(f"Kolom dummy untuk Riwayat Mental '{mhh_value}' tidak ditemukan di model.")
 
-# Scale input if scaler available
+# Scaling fitur jika scaler ada
 if scaler_available:
     scaled_input = scaler.transform(final_input_df)
 else:
     scaled_input = final_input_df.values
 
-# Fungsi untuk melakukan scaling ulang prediksi agar output di range 1-5
-def scale_prediction_to_1_5(pred_raw, pred_min=1.5, pred_max=3.0):
-    # Linear scaling prediksi pred_raw ke rentang 1-5
+# Fungsi scaling prediksi linear model ke skala 1-5
+def scale_prediction_to_1_5(pred_raw, pred_min=1.5, pred_max=2.8):
+    # Skala linear ke range 1-5 berdasarkan rentang prediksi model (estimasi manual)
     scaled = 1 + (pred_raw - pred_min) * 4 / (pred_max - pred_min)
-    scaled = max(1, min(5, scaled))
+    scaled = np.clip(scaled, 1, 5)
     return scaled
 
 if st.sidebar.button('Prediksi Tingkat Stres'):
@@ -117,25 +117,25 @@ if st.sidebar.button('Prediksi Tingkat Stres'):
         prediction_scaled = scale_prediction_to_1_5(prediction_raw)
 
         st.subheader('Hasil Prediksi Tingkat Stres:')
-        st.markdown(f"**Tingkat Stres diprediksi : Level `{prediction_scaled:.2f}`**")
+        st.markdown(f"**Level Stres diprediksi : {prediction_scaled:.2f}**")
 
         if prediction_scaled < 2:
             st.success("Tingkat Stres Rendah.")
         elif prediction_scaled < 3.5:
             st.warning("Tingkat Stres Sedang. Perlu perhatian.")
         else:
-            st.error("Tingkat Stres Tinggi. Sangat disarankan untuk mencari bantuan.")
+            st.error("Tingkat Stres Tinggi. Sangat disarankan mencari bantuan profesional.")
 
-        st.subheader("Koefisien Model (Feature Coefficients):")
+        st.subheader("Koefisien Model:")
         for feature, coef in zip(MODEL_EXPECTED_COLUMNS, model.coef_):
             st.write(f"{feature}: {coef:.3f}")
         st.write(f"Intercept: {model.intercept_:.3f}")
 
-        manual_pred_raw = np.dot(final_input_df.iloc[0], model.coef_) + model.intercept_
-        st.write(f"Perhitungan manual prediksi (tanpa scaling): {manual_pred_raw:.3f}")
+        manual_calc = np.dot(final_input_df.iloc[0], model.coef_) + model.intercept_
+        st.write(f"Perhitungan manual (tanpa scaling): {manual_calc:.3f}")
 
     except Exception as e:
-        st.error("Terjadi kesalahan saat melakukan prediksi. Pastikan semua kolom input sesuai.")
+        st.error("Error saat melakukan prediksi.")
         st.exception(e)
 
 st.sidebar.markdown('---')
