@@ -1,40 +1,37 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 
 st.title("Prediksi Tingkat Stres Mahasiswa - Versi Sederhana dari Nol")
-st.write("Aplikasi prediksi tingkat stres mahasiswa dengan model linear buatan sendiri.")
+st.write("Aplikasi prediksi tingkat stres mahasiswa dengan model linear sederhana.")
 
-# Fungsi model linear manual dengan koefisien yang sudah saya tetapkan
+# Fungsi model linear manual dengan koefisien yang ditentukan
 def simple_stress_model(features):
     """
-    features: dict dengan key sesuai input fitur berikut.
+    features: dict berisi nilai fitur input.
     Mengembalikan prediksi skor stres antara 1 sampai 5.
     """
-    # Bobot koefisien fitur, beri bobot yang cukup signifikan supaya prediksi menyesuaikan input dan mudah dipahami
     coefs = {
-        'living_conditions': 0.5,        # Kondisi hidup buruk naikkan stres
-        'basic_needs': 0.6,              # kebutuhan tidak terpenuhi naikkan stres
-        'academic_performance': -0.7,    # peforma akademik tinggi turunkan stres
-        'study_load': 0.8,               # beban belajar berat naikkan stres
-        'social_support': -0.5,          # support sosial tinggi turunkan stres
-        'peer_pressure': 0.7,            # tekanan teman naikkan stres
-        'extracurricular_activities': 0.3, # ekstrakurikuler banyak naikkan stres sedikit
-        'bullying': 1.0,                 # bullying sering naikkan stres banyak
-        'mental_health_history': 1.2     # ada riwayat mental naikkan stres cukup banyak
+        'living_conditions': 0.5,        # Kondisi hidup buruk menaikkan stres
+        'basic_needs': 0.6,              # Kebutuhan tidak terpenuhi menaikkan stres
+        'academic_performance': -0.7,    # Akademik tinggi menurunkan stres
+        'study_load': 0.8,               # Beban belajar berat menaikkan stres
+        'social_support': -0.5,          # Support sosial tinggi menurunkan stres
+        'peer_pressure': 0.7,            # Tekanan teman menaikkan stres
+        'extracurricular_activities': 0.3, # Ekstrakurikuler banyak menaikkan stres sedikit
+        'bullying': 1.0,                 # Bullying sering menaikkan stres banyak
+        'mental_health_history': 1.2     # Riwayat penyakit mental menaikkan stres cukup banyak
     }
-    intercept = 1.0  # nilai minimal stres
+    intercept = 1.0  # Nilai minimal stres
 
-    # Hitung prediksi linear manual
     pred = intercept
     for key, coef in coefs.items():
         pred += coef * features[key]
 
-    # Batasi prediksi antara 1 sampai 5
+    # Batasi prediksi antara 1 sampai 5 agar sesuai skala stres
     pred = max(1, min(5, pred))
     return pred
 
-# Input dari user via sidebar
+# Input user melalui sidebar
 st.sidebar.header("Input Parameter")
 
 living_conditions = st.sidebar.slider("Kondisi Hidup (1=Baik, 5=Buruk)", 1, 5, 3)
@@ -47,8 +44,6 @@ extracurricular_activities = st.sidebar.slider("Kegiatan Ekstrakurikuler (1=Sedi
 bullying = st.sidebar.slider("Bullying (1=Tidak Ada, 5=Sering)", 1, 5, 3)
 mental_health_history_str = st.sidebar.selectbox("Riwayat Masalah Kesehatan Mental", ['Tidak Ada', 'Ada'])
 
-# Ubah input ke bentuk numerik sesuai kebutuhan model
-# Perlu dipastikan skala fitur sesuai
 features = {
     'living_conditions': living_conditions,
     'basic_needs': basic_needs,
@@ -61,11 +56,11 @@ features = {
     'mental_health_history': 1 if mental_health_history_str == 'Ada' else 0
 }
 
-# Tampilkan input yang diberikan user
+# Tampilkan parameter input user
 st.subheader("Parameter Input Pengguna:")
 st.write(pd.DataFrame([features]))
 
-# Jika tombol ditekan, hitung dan tampilkan prediksi
+# Tombol prediksi
 if st.sidebar.button("Prediksi Tingkat Stres"):
     pred = simple_stress_model(features)
     st.subheader("Hasil Prediksi Tingkat Stres:")
@@ -78,19 +73,20 @@ if st.sidebar.button("Prediksi Tingkat Stres"):
     else:
         st.error("Tingkat Stres Tinggi. Disarankan mencari bantuan profesional.")
 
-    # Tampilkan bobot koefisien untuk transparansi
+    # Tampilkan bobot dan kontribusi fitur untuk transparansi
     st.subheader("Bobot Fitur Model:")
     for k, v in features.items():
-        w = (0.5 if k == 'living_conditions' else
-             0.6 if k == 'basic_needs' else
-             -0.7 if k == 'academic_performance' else
-             0.8 if k == 'study_load' else
-             -0.5 if k == 'social_support' else
-             0.7 if k == 'peer_pressure' else
-             0.3 if k == 'extracurricular_activities' else
-             1.0 if k == 'bullying' else
-             1.2)
+        w = (
+            0.5 if k == 'living_conditions' else
+            0.6 if k == 'basic_needs' else
+            -0.7 if k == 'academic_performance' else
+            0.8 if k == 'study_load' else
+            -0.5 if k == 'social_support' else
+            0.7 if k == 'peer_pressure' else
+            0.3 if k == 'extracurricular_activities' else
+            1.0 if k == 'bullying' else
+            1.2
+        )
         st.write(f"{k}: bobot {w}, nilai input {v}, kontribusi: {w*v:.2f}")
 
     st.write(f"Intercept model: 1.0")
-
