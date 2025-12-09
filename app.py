@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
+from sklearn.preprocessing import StandardScaler
 
 # --- Konfigurasi Halaman Streamlit ---
 st.set_page_config(
@@ -13,7 +14,10 @@ st.set_page_config(
 # --- Pemetaan Kategori Hasil ---
 # Model memprediksi skor kontinu. Kita memetakan skor tersebut ke kategori 1-5.
 def map_prediction_to_level(score):
-    # Menyesuaikan skor prediksi untuk membaginya ke dalam kategori 1-5
+    # Pastikan nilai prediksi tidak negatif
+    score = max(score, 0)  # Cegah prediksi negatif
+
+    # Pembagian skala tingkat stres: 1-5
     if score < 0.2:
         return "Tingkat Stres Sangat Rendah (1)"
     elif score < 0.4:
@@ -111,10 +115,14 @@ if model is not None:
         'mental_health_history_1': [1 if mental_health_history == 1 else 0]
     })
 
+    # --- Normalisasi Fitur ---
+    scaler = StandardScaler()
+    input_data_scaled = scaler.fit_transform(input_data)
+
     # --- Tombol Prediksi ---
     if st.button("Prediksi Tingkat Stres", type="primary"):
         # Lakukan Prediksi
-        prediction_score = model.predict(input_data)[0]
+        prediction_score = model.predict(input_data_scaled)[0]
         stress_level_result = map_prediction_to_level(prediction_score)
 
         st.subheader("Hasil Prediksi Tingkat Stres")
