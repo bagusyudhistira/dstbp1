@@ -92,9 +92,8 @@ dummy_col_name = DUMMY_COLUMN_MAPPING.get(mhh_value)
 if dummy_col_name and dummy_col_name in final_input_df.columns:
     final_input_df[dummy_col_name] = 1
 else:
-    # Menggunakan nilai default jika pemetaan gagal
-    st.warning(f"Kolom untuk '{mhh_value}' tidak ditemukan. Menggunakan nilai default 'Tidak Ada'.")
-    final_input_df['mental_health_history_0'] = 1
+    st.error(f"Peringatan: Kolom dummy untuk '{mhh_value}' tidak ditemukan. Kolom yang diharapkan adalah: {', '.join(MODEL_EXPECTED_COLUMNS)}.")
+
 
 
 # --- Prediction Logic ---
