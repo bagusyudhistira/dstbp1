@@ -93,7 +93,7 @@ if dummy_col_name and dummy_col_name in final_input_df.columns:
     final_input_df[dummy_col_name] = 1
 else:
     # If there's an issue with the dummy column mapping, show an error
-    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Kolom yang diharapkan adalah 'Tidak Ada' dan 'Ada'.")
+    st.error(f" ")
 
 # --- Prediction Logic ---
 if st.sidebar.button('Prediksi Tingkat Stres'):
