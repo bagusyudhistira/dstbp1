@@ -107,7 +107,7 @@ if st.sidebar.button('Prediksi Tingkat Stres'):
         # Provide feedback based on the predicted level
         if predicted_level < 1:
             st.success("Tingkat Stres Rendah.")
-        elif predicted_level < 1.5:
+        elif predicted_level < 2:
             st.warning("Tingkat Stres Sedang. Perlu perhatian.")
         else:
             st.error("Tingkat Stres Tinggi. Sangat disarankan untuk mencari bantuan.")
