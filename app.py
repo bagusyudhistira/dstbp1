@@ -108,9 +108,9 @@ if st.sidebar.button('Prediksi Tingkat Stres'):
         st.markdown(f"**Tingkat Stres diprediksi : Level `{predicted_level:.2f}`**")
 
         # Provide feedback based on the predicted level
-        if predicted_level < 2:
+        if predicted_level < 1:
             st.success("Tingkat Stres Rendah.")
-        elif predicted_level < 3.5:
+        elif predicted_level < 2:
             st.warning("Tingkat Stres Sedang. Perlu perhatian.")
         else:
             st.error("Tingkat Stres Tinggi. Sangat disarankan untuk mencari bantuan.")
@@ -121,4 +121,4 @@ if st.sidebar.button('Prediksi Tingkat Stres'):
 
 # --- Sidebar Footer ---
 st.sidebar.markdown('---')
-st.sidebar.markdown('Skala Stres: 1 (Sangat Rendah) - 5 (Sangat Tinggi)')
+st.sidebar.markdown('Skala Stres: 1 (Rendah) - 3 (Tinggi)')
