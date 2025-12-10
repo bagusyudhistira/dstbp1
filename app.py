@@ -93,7 +93,7 @@ for col in ['living_conditions', 'basic_needs','academic_performance', 'study_lo
     final_input_df[dummy_col_name] = 1
 #else:
     # If there's an issue with the dummy column mapping, show an error
-    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Kolom yang diharapkan adalah 'Tidak Ada' dan 'Ada'.")
+    #st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Kolom yang diharapkan adalah 'Tidak Ada' dan 'Ada'.")
 mhh_value = df_input['mental_health_history'][0]
 if mhh_value not in DUMMY_COLUMN_MAPPING:
     st.error(f"Peringatan: Nilai '{mhh_value}' tidak valid untuk Riwayat Mental. Pilih 'Tidak Ada' atau 'Ada'.")
