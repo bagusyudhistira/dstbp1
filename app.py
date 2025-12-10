@@ -89,11 +89,13 @@ mhh_value = df_input['mental_health_history'][0]
 dummy_col_name = DUMMY_COLUMN_MAPPING.get(mhh_value)
 
 # Set the relevant dummy variable to 1
-if dummy_col_name and dummy_col_name in final_input_df.columns:
-    final_input_df[dummy_col_name] = 1
-else:
-    # If there's an issue with the dummy column mapping, show an error
-    st.error(f"Peringatan: Tidak dapat mencocokkan kolom dummy untuk Riwayat Mental '{mhh_value}'. Kolom yang diharapkan adalah 'Tidak Ada' dan 'Ada'.")
+try:
+    if dummy_col_name and dummy_col_name in final_input_df.columns:
+        final_input_df[dummy_col_name] = 1
+    else:
+        raise ValueError(f"Kolom dummy untuk '{mhh_value}' tidak ditemukan dalam data.")
+except ValueError as e:
+    st.error(f"Peringatan: {e}")
 
 # --- Prediction Logic ---
 if st.sidebar.button('Prediksi Tingkat Stres'):
