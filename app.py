@@ -44,8 +44,8 @@ st.write('Aplikasi untuk memprediksi tingkat stres mahasiswa berdasarkan input y
 st.sidebar.header('Input Parameter')
 
 def user_input_features():
-    living_conditions = st.sidebar.slider('Kondisi Hidup (1=Rendah, 5=Tinggi)', 1, 5, 3)
-    basic_needs = st.sidebar.slider('Kebutuhan (1=Rendah, 5=Tinggi)', 1, 5, 3)
+    living_conditions = st.sidebar.slider('Kondisi Hidup (1=Buruk, 5=Baik)', 1, 5, 3)
+    basic_needs = st.sidebar.slider('Kebutuhan (1=Sedikit, 5=Banyak)', 1, 5, 3)
     academic_performance = st.sidebar.slider('Performa Akademik (1=Rendah, 5=Tinggi)', 1, 5, 3)
     study_load = st.sidebar.slider('Beban Belajar (1=Ringan, 5=Berat)', 1, 5, 3)
     social_support = st.sidebar.slider('Support Sosial (1=Rendah, 5=Tinggi)', 1, 5, 3)
